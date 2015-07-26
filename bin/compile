@@ -14,6 +14,7 @@ BUILD_DIR=${1:-}
 CACHE_DIR=${2:-}
 ENV_DIR=${3:-}
 BP_DIR=$(cd $(dirname ${0:-}); cd ..; pwd)
+VENDOR_DIR="$BUILD_DIR/vendor2" #cached vendor dir
 
 mkdir -p "$BUILD_DIR/.heroku/node/"
 cd $BUILD_DIR
@@ -83,6 +84,23 @@ install_bins() {
     install_npm "$npm_engine" "$BUILD_DIR/.heroku/node"
   fi
   warn_old_npm
+
+  if [ -d $CACHE_DIR/node/vendor/nasm ]; then
+    echo "Copying nasm from cache"
+    cp -r $CACHE_DIR/node/vendor/nasm $VENDOR_DIR
+  else
+    echo "Installing nasm from source"
+    NVERSION="2.11"
+    curl http://www.nasm.us/pub/nasm/releasebuilds/$NVERSION/nasm-$NVERSION.tar.gz -s | tar xz
+    cd nasm-$NVERSION
+    ./configure >/dev/null 2>&1 && make >/dev/null 2>&1
+
+    mkdir -p $VENDOR_DIR/nasm/bin
+    mv nasm $VENDOR_DIR/nasm/bin
+    chmod +x $VENDOR_DIR/nasm/bin/*
+  fi
+  PATH=$PATH:$VENDOR_DIR/nasm/bin
+
 }
 
 header "Installing binaries"
@@ -119,6 +137,54 @@ build_dependencies() {
 
 header "Building dependencies"
 build_dependencies | indent
+
+# If Procfile is absent, try to create one using `npm start`
+if [ ! -e $BUILD_DIR/Procfile ]; then
+  npm_start=$(read_json "$BUILD_DIR/package.json" ".scripts.start")
+
+  # If `scripts.start` is set in package.json, or a server.js file
+  # is present in the app root, then create a default Procfile
+  if [ "$npm_start" != "null" ]; then
+    status "No Procfile found; Adding 'npm start' to new Procfile"
+    echo "web: npm start" > $BUILD_DIR/Procfile
+  elif  [ -f $BUILD_DIR/server.js ]; then
+    status "No Procfile found; Adding 'node server.js' to new Procfile"
+    echo "web: node server.js" > $BUILD_DIR/Procfile
+  elif  [ -f $BUILD_DIR/app.js ]; then
+    status "No Procfile found; Adding 'node app.js' to new Procfile"
+    echo "web: node app.js" > $BUILD_DIR/Procfile
+  else
+    status "Procfile not found and npm start script is undefined"
+    protip "Create a Procfile or specify a start script in package.json"
+  fi
+fi
+
+# Check and run gulp
+if [ -f $BUILD_DIR/gulpfile.js ]; then
+#  # get the env vars
+#  if [ -d "$ENV_DIR" ]; then
+#    status "Exporting config vars to environment"
+#    export_env_dir $ENV_DIR
+#  fi
+  header "Gulpfile found"
+  # Install gulp locally
+  echo "Updating gulp locally"
+  if [ -e node_modules/.bin/gulp ]; then
+    npm update gulp 2>&1 | indent
+  else
+    npm install gulp 2>&1 | indent
+  fi
+
+  if [ ! -z "${GULP_TASK:-}" ]; then
+    echo "Found GULP_TASK, running 'gulp $GULP_TASK'"
+    $BUILD_DIR/node_modules/.bin/gulp $GULP_TASK
+  else
+    echo "No GULP_TASK found, running 'gulp build'"
+    $BUILD_DIR/node_modules/.bin/gulp build
+  fi
+else
+  header "No gulpfile found"
+fi
 
 cache_build() {
   local cache_directories=$(get_cache_directories)
