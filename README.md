@@ -1,4 +1,4 @@
-# Heroku Buildpack for Node.js
+# Heroku Buildpack for Node.js + Gulp
 
 A modified version of Heroku's official node.js buildpack. Adding gulp support, default procfile generation, and nasm for image minification. With support for iojs + npm versioning via package.json settings.
 
@@ -27,7 +27,8 @@ When the buildpack runs it will do many things similarly to the standard [Heroku
 - If `Procfile` is not found
     - Looks for a `npm start` script
     - Then for a `server.js` file
-    - And then for an `app.js` file
+    - And then for an `app.js` file  
+
 ## Documentation
 
 For more information about using Node.js and buildpacks on Heroku, see these Dev Center articles:
