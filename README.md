@@ -28,7 +28,6 @@ When the buildpack runs it will do many things similarly to the standard [Heroku
     - Looks for a `npm start` script
     - Then for a `server.js` file
     - And then for an `app.js` file
-    - 
 ## Documentation
 
 For more information about using Node.js and buildpacks on Heroku, see these Dev Center articles:
