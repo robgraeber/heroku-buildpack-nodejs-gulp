@@ -1,6 +1,6 @@
 # Heroku Buildpack for Node.js
 
-A modified version of Heroku's official node.js buildpack. Adding gulp support, default procfile generation, and nasm for image minification.
+A modified version of Heroku's official node.js buildpack. Adding gulp support, default procfile generation, and nasm for image minification. With support for iojs + npm versioning via package.json settings.
 
 Usage
 -----
@@ -8,25 +8,19 @@ Usage
 - Create a new app using `heroku create --buildpack=https://github.com/robgraeber/heroku-buildpack-nodejs-gulp.git`. To be safe, you should fork this and use your fork's URL.
 - Add a Gulp task that builds your app. By default, the buildpack will call `gulp build`. 
  - To specify your own task: Run `heroku config:set GULP_TASK=build` (Or any other name).
-- Add a `bower.json`/`.bowerrc` file that will be used with `bower install`. Packages not in `bower.json`are pruned each build.
 - And additionally, the buildpack has a few extra entry points. It will look for entry points in the following order:  
  - `Procfile`: e.g. `web: node server.js`.
  - `npm start` script.
  - `server.js` file.
  - `app.js` file.
 
-Note: It will only use bower/gulp if `bower.json` or `gulpfile.js` is found. Otherwise it's usable the same as other Node.js buildpacks, except with extra entry points.
+Note: It will only use gulp if a `gulpfile.js` is found. Otherwise it's usable the same as other Node.js buildpacks, except with extra entry points.
 
 Things That Will Happen
 -----------------------
 
 When the buildpack runs it will do many things similarly to the standard [Heroku buildpack](https://github.com/heroku/heroku-buildpack-nodejs). In addition it will do the following things, in roughly this order.
 
-- If `bower.json` is found
-    - Extract the `directory` key from `.bowerrc` if that is present
-    - Run `npm install bower` to install bower locally
-    - Run `bower install` to install `bower_components`. 
-    - Cache `bower_components` or whichever alternate directory was specified in `.bowerrc`
 - If `gulpfile.js` is found
     - Run `npm install gulp` to install gulp locally during the build
     - Run `gulp build` to build the app
