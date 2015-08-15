@@ -160,7 +160,7 @@ if [ ! -e $BUILD_DIR/Procfile ]; then
 fi
 
 # Check and run gulp
-if [ -f $BUILD_DIR/gulpfile.js ]; then
+if [ -f $BUILD_DIR/gulpfile.js ] || [ -f $BUILD_DIR/Gulpfile.js ]; then
 #  # get the env vars
 #  if [ -d "$ENV_DIR" ]; then
 #    status "Exporting config vars to environment"
